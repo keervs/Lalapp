@@ -1,9 +1,10 @@
 // lib/firebaseConfig.ts
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { Auth, getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// 🔑 Your config
+
 const firebaseConfig = {
   apiKey: "AIzaSyAO8-lDbbNh_hFi51ikbrQPpzLjxQS3Dcg",
   authDomain: "lalappp.firebaseapp.com",
@@ -13,11 +14,23 @@ const firebaseConfig = {
   appId: "1:71560906262:web:b42aa0718935dfc38c9737",
 };
 
-// 🚀 Init app
 const app = initializeApp(firebaseConfig);
 
-// ✅ SIMPLE AUTH (NO ERRORS, NO CRASH)
-export const auth = getAuth(app);
+// ✅ THIS LINE FIXES YOUR ERROR
+let auth: Auth;
 
-// ✅ Firestore
+try {
+  const { getReactNativePersistence } = require("firebase/auth/react-native");
+
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+
+  console.log("✅ Auth with persistence");
+} catch (e) {
+  auth = getAuth(app);
+  console.log("⚠️ Fallback auth");
+}
+
+export { auth };
 export const db = getFirestore(app);
