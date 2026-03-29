@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 export default function Home() {
@@ -30,28 +30,28 @@ export default function Home() {
         {/* Main Actions */}
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./book-a-behen")}
+          onPress={() => router.push("../university/book-a-behen")}
         >
           <Text style={styles.cardText}>BOOK A BEHEN</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./fests")}
+          onPress={() => router.push("../university/fests")}
         >
           <Text style={styles.cardText}>FESTS</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./assocs")}
+          onPress={() => router.push("../university/assocs")}
         >
           <Text style={styles.cardText}>ASSOCIATIONS</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./c2c")}
+          onPress={() => router.push("../university/c2c")}
         >
           <Text style={styles.cardText}>
             CONTRIBUTION TO COUPON
@@ -63,21 +63,21 @@ export default function Home() {
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("../usdunion")}
+          onPress={() => router.push("../university/usdunion")}
         >
           <Text style={styles.cardText}>US THE UNION</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./newss")}
+          onPress={() => router.push("../university/newss")}
         >
           <Text style={styles.cardText}>NEW NEWS</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("./preevnts")}
+          onPress={() => router.push("../university/preevnts")}
         >
           <Text style={styles.cardText}>PRE EVENTS</Text>
         </Pressable>
