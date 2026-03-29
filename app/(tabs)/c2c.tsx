@@ -1,7 +1,15 @@
 import axios from "axios";
-import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Modal,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { WebView } from "react-native-webview";
 
 const BACKEND_URL = "https://lalapp-production.up.railway.app";
 
@@ -15,6 +23,8 @@ type EventType = {
 export default function C2C() {
   const [selectedFest, setSelectedFest] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentHtml, setPaymentHtml] = useState("");
   const [events, setEvents] = useState<EventType[]>([
     { id: "yagnadhruva", name: "YAGNADHRUVA", target: 2000, paid: 1500 },
     { id: "yavanika", name: "YAVANIKA", target: 200, paid: 50 },
@@ -43,14 +53,32 @@ export default function C2C() {
       });
 
       const sessionId = res.data.paymentSessionId;
-      const url = `https://sandbox.cashfree.com/pg/view/payment/session/${sessionId}`;
 
-      await WebBrowser.openBrowserAsync(url);
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+            <style>
+              body { margin: 0; padding: 0; font-family: sans-serif; }
+            </style>
+          </head>
+          <body>
+            <script>
+              const cashfree = Cashfree({ mode: "sandbox" });
+              cashfree.checkout({
+                paymentSessionId: "${sessionId}",
+                redirectTarget: "_self",
+              });
+            </script>
+          </body>
+        </html>
+      `;
 
-      // Payment confirmation will come via webhook → Firestore
-      // Do NOT update paid amount here
-      setSelectedFest(null);
-
+      setPaymentHtml(html);
+      setShowPayment(true);
     } catch (err) {
       console.log(err);
       alert("Payment initialization failed. Is your backend running?");
@@ -100,6 +128,29 @@ export default function C2C() {
           {loading ? "LOADING..." : selectedFest ? "PAY" : "PICK A FEST"}
         </Text>
       </Pressable>
+
+      <Modal visible={showPayment} animationType="slide">
+        <SafeAreaView style={{ flex: 1 }}>
+          <Pressable style={styles.closeButton} onPress={() => setShowPayment(false)}>
+            <Text style={styles.closeText}>✕ Close</Text>
+          </Pressable>
+          <WebView
+            source={{ html: paymentHtml }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onNavigationStateChange={(navState) => {
+              if (navState.url.includes("/payment-success")) {
+                setShowPayment(false);
+                alert("Payment Successful! ✅");
+                setSelectedFest(null);
+              } else if (navState.url.includes("/payment-failed")) {
+                setShowPayment(false);
+                alert("Payment Failed ❌");
+              }
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -130,4 +181,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   payText: { fontSize: 18, fontWeight: "700" },
+  closeButton: {
+    padding: 14,
+    backgroundColor: "#fff",
+    alignItems: "flex-end",
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+  },
+  closeText: { fontSize: 16, color: "#c43c4a", fontWeight: "700" },
 });
