@@ -54,7 +54,7 @@ const getTileHistograms = async (uri: string): Promise<number[]> => {
 const loadOriginalTileHistogram = async (): Promise<number[]> => {
   if (ORIGINAL_TILE_HISTOGRAM) return ORIGINAL_TILE_HISTOGRAM;
 
-  const asset = Asset.fromModule(require("../app/(tabs)/assets/badge.png"));
+  const asset = Asset.fromModule(require("../app/_assets/badge.png"));
   await asset.downloadAsync();
   const uri = asset.localUri || asset.uri;
 
