@@ -29,7 +29,7 @@ app.post("/create-order", async (req, res) => {
           customer_phone: "9999999999",
         },
         order_meta: {
-          return_url: `${process.env.BACKEND_URL}/payment-success`,
+          return_url: `${process.env.BACKEND_URL}/payment-success?order_id={order_id}`,
         },
       },
       {

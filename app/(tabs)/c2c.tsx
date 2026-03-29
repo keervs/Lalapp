@@ -3,7 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-const BACKEND_URL = "https://YOUR-NGROK-URL"; // 🔥 replace this
+const BACKEND_URL = "https://lalapp-production.up.railway.app";
 
 type EventType = {
   id: string;
@@ -43,19 +43,12 @@ export default function C2C() {
       });
 
       const sessionId = res.data.paymentSessionId;
-      const url = `https://sandbox.cashfree.com/pg/view/payment/${sessionId}`;
+      const url = `https://sandbox.cashfree.com/pg/view/payment/session/${sessionId}`;
 
-      // Opens in browser on both web and Android
       await WebBrowser.openBrowserAsync(url);
 
-      // After browser closes, mark as paid optimistically
-      setEvents((prev) =>
-        prev.map((event) =>
-          event.id === selectedFest
-            ? { ...event, paid: event.target }
-            : event
-        )
-      );
+      // Payment confirmation will come via webhook → Firestore
+      // Do NOT update paid amount here
       setSelectedFest(null);
 
     } catch (err) {
