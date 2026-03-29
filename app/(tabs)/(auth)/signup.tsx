@@ -147,7 +147,7 @@ export default function Signup() {
 
           {/* LOGO */}
           <Image
-            source={require("../assets/splash.png")}
+            source={require("../../_assets/splash.png")}
             style={[styles.logo, isDesktop && styles.logoDesktop]}
             resizeMode="contain"
           />
