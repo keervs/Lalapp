@@ -62,7 +62,7 @@ export default function BadgeUpload() {
       });
 
       if (isValid) {
-        router.replace("/(tabs)/home");
+        router.replace("./university/home");
       } else {
         Alert.alert(
           "❌ Verification Failed",

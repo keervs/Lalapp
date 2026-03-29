@@ -24,7 +24,7 @@ export default function Splash() {
   return (
     <View style={styles.container}>
       <Image
-        source={require("./splash.png")}
+        source={require("./(tabs)/assets/splash.png")}
         style={styles.logo}
         resizeMode="contain"
       />
