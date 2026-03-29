@@ -1,8 +1,14 @@
 // lib/firebaseConfig.ts
 
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+
+// 👇 IMPORTANT (no TS error version)
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// 👇 workaround import
+const { getReactNativePersistence } = require("firebase/auth/react-native");
 
 // 🔑 Your config
 const firebaseConfig = {
@@ -17,8 +23,10 @@ const firebaseConfig = {
 // 🚀 Init app
 const app = initializeApp(firebaseConfig);
 
-// ✅ SIMPLE AUTH (works 100% in Expo)
-export const auth = getAuth(app);
+// ✅ AUTH WITH PERSISTENCE (FIXED)
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 
 // ✅ Firestore
 export const db = getFirestore(app);
