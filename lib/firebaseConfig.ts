@@ -1,15 +1,8 @@
 // lib/firebaseConfig.ts
 
 import { initializeApp } from "firebase/app";
-import { initializeAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-
-// 👇 IMPORTANT (no TS error version)
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// 👇 workaround import
-const { getReactNativePersistence } = require("firebase/auth/react-native");
-
 // 🔑 Your config
 const firebaseConfig = {
   apiKey: "AIzaSyAO8-lDbbNh_hFi51ikbrQPpzLjxQS3Dcg",
@@ -23,10 +16,8 @@ const firebaseConfig = {
 // 🚀 Init app
 const app = initializeApp(firebaseConfig);
 
-// ✅ AUTH WITH PERSISTENCE (FIXED)
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// ✅ SIMPLE AUTH (NO ERRORS, NO CRASH)
+export const auth = getAuth(app);
 
 // ✅ Firestore
 export const db = getFirestore(app);
