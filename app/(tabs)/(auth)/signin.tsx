@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -11,7 +10,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-export { auth };
+
+import { useRouter } from "expo-router";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
