@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../lib/firebaseConfig";
+import { auth, db } from "../../../lib/firebaseConfig";
 
 export default function Signup() {
   const router = useRouter();

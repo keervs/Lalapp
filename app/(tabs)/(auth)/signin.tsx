@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../lib/firebaseConfig";
+import { auth, db } from "../../../lib/firebaseConfig";
 
 export default function SignIn() {
   const router = useRouter();
