@@ -82,7 +82,7 @@ export default function Signup() {
         branch: branch.trim(),
         regNo: normalizedReg,
         email,
-        role: isUnion ? "union" : "ians",
+        role: isUnion ? "union" : "university",
         badgeVerified: false,
         createdAt: new Date(),
       });

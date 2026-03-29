@@ -10,17 +10,16 @@ import {
 } from "react-native";
 
 import { doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../../lib/firebaseConfig";
+import { auth, db } from "../../../lib/firebaseConfig";
 
 import { useRouter } from "expo-router";
-import { verifyBadge } from "../../utils/verifyBadge";
+import { verifyBadge } from "../../../utils/verifyBadge";
 
 export default function BadgeUpload() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-
   const pickImage = async () => {
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
