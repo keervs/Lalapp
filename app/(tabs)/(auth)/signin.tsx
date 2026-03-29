@@ -62,9 +62,9 @@ export default function SignIn() {
 
       // ✅ Navigation
       if (role === "union") {
-        router.replace("./union/badge_verification");
+        router.replace("../union/badge_verification");
       } else {
-        router.replace("./university/home");
+        router.replace("../university/home");
       }
 
     } catch (error: any) {
