@@ -78,7 +78,7 @@ export default function SignIn() {
 
         {/* LOGO */}
         <Image
-          source={require("./splash.png")}
+          source={require("../assets/splash.png")}
           style={[styles.logo, isDesktop && styles.logoDesktop]}
           resizeMode="contain"
         />
