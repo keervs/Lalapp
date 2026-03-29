@@ -1,7 +1,10 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+// lib/firebaseConfig.ts
 
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+// 🔑 Your config
 const firebaseConfig = {
   apiKey: "AIzaSyAO8-lDbbNh_hFi51ikbrQPpzLjxQS3Dcg",
   authDomain: "lalappp.firebaseapp.com",
@@ -11,11 +14,11 @@ const firebaseConfig = {
   appId: "1:71560906262:web:b42aa0718935dfc38c9737",
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// 🚀 Init app
+const app = initializeApp(firebaseConfig);
 
-// ✅ ONLY this (no extra flags)
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
-
+// ✅ SIMPLE AUTH (works 100% in Expo)
 export const auth = getAuth(app);
+
+// ✅ Firestore
+export const db = getFirestore(app);
