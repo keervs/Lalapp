@@ -90,7 +90,7 @@ export default function C2C() {
   return (
     <View style={styles.container}>
       <Image
-        source={require("./splash.png")}
+        source={require("../assets/splash.png")}
         style={styles.logo}
         resizeMode="contain"
       />
