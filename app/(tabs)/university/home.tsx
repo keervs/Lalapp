@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -9,6 +10,7 @@ import {
 
 export default function Home() {
   const router = useRouter();
+  const [assocsOpen, setAssocsOpen] = useState(false);
 
   return (
     <View style={styles.root}>
@@ -42,12 +44,46 @@ export default function Home() {
           <Text style={styles.cardText}>FESTS</Text>
         </Pressable>
 
+        {/* ── ASSOCIATIONS with dropdown ── */}
         <Pressable
-          style={styles.card}
-          onPress={() => router.push("./assocs")}
+          style={[styles.card, assocsOpen && styles.cardActive]}
+          onPress={() => setAssocsOpen((prev) => !prev)}
         >
-          <Text style={styles.cardText}>ASSOCIATIONS</Text>
+          <View style={styles.cardRow}>
+            <Text style={[styles.cardText, assocsOpen && styles.cardTextActive]}>
+              ASSOCIATIONS
+            </Text>
+            <Text style={[styles.chevron, assocsOpen && styles.chevronOpen]}>
+              ›
+            </Text>
+          </View>
         </Pressable>
+
+        {/* Subtabs — slide in when open */}
+        {assocsOpen && (
+          <View style={styles.subList}>
+            <Pressable
+              style={styles.subCard}
+              onPress={() => router.push("./samyuktha")}
+            >
+              <Text style={styles.subCardText}>SAMYUKTHA</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.subCard}
+              onPress={() => router.push("./advayra")}
+            >
+              <Text style={styles.subCardText}>ADVA(Y/R)A</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.subCard, { marginBottom: 0 }]}
+              onPress={() => router.push("./sarga")}
+            >
+              <Text style={styles.subCardText}>SARGA</Text>
+            </Pressable>
+          </View>
+        )}
 
         <Pressable
           style={styles.card}
@@ -97,8 +133,6 @@ export default function Home() {
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -141,11 +175,67 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     elevation: 3,
   },
+  cardActive: {
+    backgroundColor: "#c43c4a",
+    marginBottom: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   cardText: {
     fontSize: 18,
     fontWeight: "700",
     color: "#000",
   },
+  cardTextActive: {
+    color: "#fff",
+  },
+  chevron: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#c43c4a",
+    transform: [{ rotate: "0deg" }],
+  },
+  chevronOpen: {
+    color: "#fff",
+    transform: [{ rotate: "90deg" }],
+  },
+
+  // ── Subtabs ──
+  subList: {
+    backgroundColor: "#f9eaeb",
+    borderLeftWidth: 3,
+    borderRightWidth: 3,
+    borderBottomWidth: 3,
+    borderColor: "#c43c4a",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 14,
+    marginBottom: 18,
+  },
+  subCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 10,
+    elevation: 1,
+    borderLeftWidth: 4,
+    borderLeftColor: "#c43c4a",
+  },
+  subCardText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#c43c4a",
+    letterSpacing: 1,
+  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
