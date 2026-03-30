@@ -1,5 +1,13 @@
+// C2C.tsx — Student View
 import axios from "axios";
-import { useState } from "react";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -10,14 +18,24 @@ import {
   View,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import { auth, db } from "../../lib/firebase";
 
 const BACKEND_URL = "https://lalapp-production.up.railway.app";
 
-type EventType = {
+type FestType = {
   id: string;
   name: string;
   target: number;
-  paid: number;
+  totalPaid: number;
+  installmentAmount: number;
+  subTarget?: number;
+  deadline?: string;
+};
+
+type ContributionType = {
+  festId: string;
+  totalPaid: number;
+  pending: number;
 };
 
 export default function C2C() {
@@ -25,31 +43,92 @@ export default function C2C() {
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentHtml, setPaymentHtml] = useState("");
-  const [events, setEvents] = useState<EventType[]>([
-    { id: "yagnadhruva", name: "YAGNADHRUVA", target: 2000, paid: 1500 },
-    { id: "yavanika", name: "YAVANIKA", target: 200, paid: 50 },
-  ]);
+
+  // Live from Firestore
+  const [fests, setFests] = useState<FestType[]>([]);
+  // Per-student contributions map: festId → { totalPaid, pending }
+  const [contributions, setContributions] = useState<Record<string, ContributionType>>({});
+  const [userInfo, setUserInfo] = useState<{ uid: string; regNo: string; name: string } | null>(null);
+
+  // 1. Get current user info from Firestore users/
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setUserInfo({ uid: user.uid, regNo: d.regNo, name: d.name });
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // 2. Live fests from Firestore
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "fests"), (snap) => {
+      const data: FestType[] = snap.docs.map((d) => ({
+        id: d.id,
+        name: d.data().name,
+        target: d.data().target,
+        totalPaid: d.data().totalPaid ?? 0,
+        installmentAmount: d.data().installmentAmount ?? 0,
+        subTarget: d.data().subTarget,
+        deadline: d.data().deadline,
+      }));
+      setFests(data);
+    });
+    return () => unsub();
+  }, []);
+
+  // 3. Live contributions for this student
+  useEffect(() => {
+    if (!userInfo) return;
+    const q = query(
+      collection(db, "contributions"),
+      where("userId", "==", userInfo.uid)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const map: Record<string, ContributionType> = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        map[data.festId] = {
+          festId: data.festId,
+          totalPaid: data.totalPaid ?? 0,
+          pending: data.pending ?? 0,
+        };
+      });
+      setContributions(map);
+    });
+    return () => unsub();
+  }, [userInfo]);
 
   const handlePay = async () => {
-    if (!selectedFest) {
+    if (!selectedFest || !userInfo) {
       alert("Select a fest first");
       return;
     }
 
-    const fest = events.find((e) => e.id === selectedFest);
+    const fest = fests.find((f) => f.id === selectedFest);
     if (!fest) return;
 
-    const pending = fest.target - fest.paid;
+    const contrib = contributions[selectedFest];
+    const pending = contrib ? contrib.pending : fest.target;
+
     if (pending <= 0) {
-      alert("This fest is already fully funded!");
+      alert("You have fully paid for this fest!");
       return;
     }
+
+    const amountToPay = Math.min(fest.installmentAmount, pending);
 
     setLoading(true);
     try {
       const res = await axios.post(`${BACKEND_URL}/create-order`, {
-        orderAmount: pending,
+        orderAmount: amountToPay,
         festId: fest.id,
+        userId: userInfo.uid,
+        regNo: userInfo.regNo,
+        name: userInfo.name,
       });
 
       const sessionId = res.data.paymentSessionId;
@@ -61,9 +140,7 @@ export default function C2C() {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
-            <style>
-              body { margin: 0; padding: 0; font-family: sans-serif; }
-            </style>
+            <style>body { margin: 0; padding: 0; font-family: sans-serif; }</style>
           </head>
           <body>
             <script>
@@ -98,22 +175,36 @@ export default function C2C() {
       <Text style={styles.header}>LALAPP</Text>
 
       <View style={styles.festRow}>
-        {events.map((event) => {
-          const pending = event.target - event.paid;
-          const isSelected = selectedFest === event.id;
+        {fests.map((fest) => {
+          const contrib = contributions[fest.id];
+          const myPaid = contrib ? contrib.totalPaid : 0;
+          const myPending = contrib ? contrib.pending : fest.target;
+          const isSelected = selectedFest === fest.id;
+          const isPaid = myPending <= 0;
 
           return (
-            <View key={event.id} style={styles.festBlock}>
+            <View key={fest.id} style={styles.festBlock}>
               <Pressable
-                onPress={() => setSelectedFest(event.id)}
+                onPress={() => !isPaid && setSelectedFest(fest.id)}
                 style={[styles.festButton, isSelected && styles.selectedFest]}
               >
-                <Text style={styles.festText}>{event.name}</Text>
+                <Text style={styles.festText}>{fest.name}</Text>
+                {isPaid && <Text style={styles.paidBadge}>✅ PAID</Text>}
               </Pressable>
+
+              {/* Payment Target Banner — shows only if admin has set it */}
+              {fest.subTarget && fest.deadline ? (
+                <View style={styles.targetBanner}>
+                  <Text style={styles.targetBannerText}>
+                    🎯 ₹{fest.subTarget} by {fest.deadline}
+                  </Text>
+                </View>
+              ) : null}
+
               <Text style={styles.label}>PENDING ⏱</Text>
-              <Text style={styles.value}>₹{pending}</Text>
+              <Text style={styles.value}>₹{myPending}</Text>
               <Text style={styles.label}>PAID 💰</Text>
-              <Text style={styles.value}>₹{event.paid}</Text>
+              <Text style={styles.value}>₹{myPaid}</Text>
             </View>
           );
         })}
@@ -170,6 +261,19 @@ const styles = StyleSheet.create({
   festButton: { paddingVertical: 6, paddingHorizontal: 10, marginBottom: 20 },
   selectedFest: { borderBottomWidth: 2, borderColor: "#c43c4a" },
   festText: { fontSize: 16, fontWeight: "700", textAlign: "center" },
+  paidBadge: { fontSize: 11, color: "#2e7d32", fontWeight: "700", marginTop: 4, textAlign: "center" },
+  // ── Payment Target Banner (only new style added) ──
+  targetBanner: {
+    backgroundColor: "#fff3cd",
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#f0c040",
+  },
+  targetBannerText: { fontSize: 11, fontWeight: "700", color: "#7a5c00" },
+  // ─────────────────────────────────────────────────
   label: { fontSize: 13, fontWeight: "700", marginTop: 5 },
   value: { fontSize: 16, marginBottom: 10 },
   payButton: {
