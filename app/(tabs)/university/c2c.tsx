@@ -72,8 +72,6 @@ export default function C2C() {
         target: d.data().target,
         totalPaid: d.data().totalPaid ?? 0,
         installmentAmount: d.data().installmentAmount ?? 0,
-        subTarget: d.data().subTarget,
-        deadline: d.data().deadline,
       }));
       setFests(data);
     });
