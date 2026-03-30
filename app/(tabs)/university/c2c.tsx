@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import { WebView } from "react-native-webview";
-import { auth, db } from "../../lib/firebase";
+import { auth, db } from "../../../lib/firebase";
 
 const BACKEND_URL = "https://lalapp-production.up.railway.app";
 
