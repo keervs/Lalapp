@@ -6,11 +6,15 @@ const axios = require("axios");
 const admin = require("firebase-admin");
 
 // ── Firebase Admin Init ──────────────────────────────────────────────
+const privateKey = process.env.FIREBASE_PRIVATE_KEY
+  ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+  : undefined;
+
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    privateKey: privateKey,
   }),
 });
 
@@ -22,19 +26,18 @@ app.use(express.json());
 
 // ── Health Check ─────────────────────────────────────────────────────
 app.get("/", (req, res) => {
-  res.send("LalApp backend is running ✅");
+  res.send("LalApp Backend Running ✅");
 });
 
 // ── POST /create-order ───────────────────────────────────────────────
-// Called by C2C.tsx when student taps PAY
 app.post("/create-order", async (req, res) => {
-  const { orderAmount, festId, userId, regNo, name } = req.body;
-
-  if (!orderAmount || !festId || !userId || !regNo) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
   try {
+    const { orderAmount, festId, userId, regNo, name } = req.body;
+
+    if (!orderAmount || !festId || !userId || !regNo) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
     // Check if user already fully paid for this fest
     const contribRef = db
       .collection("contributions")
@@ -44,7 +47,9 @@ app.post("/create-order", async (req, res) => {
     if (contribSnap.exists) {
       const data = contribSnap.data();
       if (data.pending <= 0) {
-        return res.status(400).json({ error: "Already fully paid for this fest" });
+        return res
+          .status(400)
+          .json({ error: "Already fully paid for this fest" });
       }
     }
 
@@ -61,7 +66,7 @@ app.post("/create-order", async (req, res) => {
           customer_id: userId,
           customer_name: name ?? regNo,
           customer_email: `${regNo}@lalapp.com`,
-          customer_phone: "9999999999", // placeholder — update if you collect phone
+          customer_phone: "9999999999",
         },
         order_meta: {
           return_url: `${process.env.BACKEND_URL}/payment-success?order_id={order_id}`,
@@ -100,7 +105,6 @@ app.post("/create-order", async (req, res) => {
 });
 
 // ── GET /payment-success ─────────────────────────────────────────────
-// Cashfree redirects here after payment — WebView intercepts this URL
 app.get("/payment-success", (req, res) => {
   res.send(`
     <html>
@@ -113,14 +117,12 @@ app.get("/payment-success", (req, res) => {
 });
 
 // ── POST /webhook ────────────────────────────────────────────────────
-// Cashfree calls this when payment status changes
 app.post("/webhook", async (req, res) => {
   try {
     const event = req.body;
     const eventType = event?.type;
 
     if (eventType !== "PAYMENT_SUCCESS_WEBHOOK") {
-      // Not a success event — acknowledge and ignore
       return res.status(200).json({ received: true });
     }
 
@@ -131,7 +133,7 @@ app.post("/webhook", async (req, res) => {
       return res.status(400).json({ error: "Missing order_id in webhook" });
     }
 
-    // 1. Fetch the PENDING payment record
+    // Fetch the PENDING payment record
     const paymentRef = db.collection("payments").doc(orderId);
     const paymentSnap = await paymentRef.get();
 
@@ -150,14 +152,14 @@ app.post("/webhook", async (req, res) => {
       return res.status(200).json({ received: true });
     }
 
-    // ── 2. Mark payment as SUCCESS ───────────────────────────────────
+    // 1. Mark payment SUCCESS
     await paymentRef.update({
       status: "SUCCESS",
       paidAt: admin.firestore.FieldValue.serverTimestamp(),
       amount: actualAmount,
     });
 
-    // ── 3. Fetch fest target ─────────────────────────────────────────
+    // 2. Fetch fest target
     const festRef = db.collection("fests").doc(festId);
     const festSnap = await festRef.get();
 
@@ -169,14 +171,15 @@ app.post("/webhook", async (req, res) => {
     const fest = festSnap.data();
     const festTarget = fest.target ?? 0;
 
-    // ── 4. Update contributions/{festId}_{regNo} ─────────────────────
-    // This is the per-student, per-fest paid/pending tracker
+    // 3. Update contributions/{festId}_{regNo}
     const contribRef = db
       .collection("contributions")
       .doc(`${festId}_${regNo}`);
     const contribSnap = await contribRef.get();
 
-    const prevPaid = contribSnap.exists ? (contribSnap.data().totalPaid ?? 0) : 0;
+    const prevPaid = contribSnap.exists
+      ? contribSnap.data().totalPaid ?? 0
+      : 0;
     const newTotalPaid = prevPaid + actualAmount;
     const newPending = Math.max(0, festTarget - newTotalPaid);
 
@@ -190,17 +193,16 @@ app.post("/webhook", async (req, res) => {
         pending: newPending,
         lastPaidAt: admin.firestore.FieldValue.serverTimestamp(),
       },
-      { merge: true } // merge so we don't wipe existing fields on first write
+      { merge: true }
     );
 
-    // ── 5. Increment fests/{festId}.totalPaid ────────────────────────
-    // This is the overall class fund progress seen by admin
+    // 4. Increment fests/{festId}.totalPaid
     await festRef.update({
       totalPaid: admin.firestore.FieldValue.increment(actualAmount),
     });
 
     console.log(
-      `✅ Webhook processed: ${orderId} | ${name} (${regNo}) paid ₹${actualAmount} for ${festId} | totalPaid now ₹${newTotalPaid} | pending ₹${newPending}`
+      `✅ ${orderId} | ${name} (${regNo}) paid ₹${actualAmount} for ${festId} | totalPaid: ₹${newTotalPaid} | pending: ₹${newPending}`
     );
 
     return res.status(200).json({ received: true });
@@ -212,6 +214,6 @@ app.post("/webhook", async (req, res) => {
 
 // ── Start Server ─────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`LalApp backend running on port ${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`LalApp backend running on port ${PORT}`)
+);
