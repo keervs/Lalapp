@@ -263,7 +263,7 @@ export default function Samyukthaa() {
     <View style={styles.container}>
       {/* ── Header ── */}
       <Image
-        source={require("../../../_assets/splash.png")}
+        source={require("../../_assets/splash.png")}
         style={styles.logo}
         resizeMode="contain"
       />
