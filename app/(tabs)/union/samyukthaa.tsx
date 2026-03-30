@@ -35,7 +35,19 @@ type EventType = {
   deadline: string;
 };
 
-const EMPTY_FORM = {
+type FormType = {
+  name: string;
+  venue: string;
+  day: string;
+  date: string;
+  time: string;
+  description: string;
+  club: string;
+  registrationLink: string;
+  deadline: string;
+};
+
+const EMPTY_FORM: FormType = {
   name: "",
   venue: "",
   day: "",
@@ -47,17 +59,74 @@ const EMPTY_FORM = {
   deadline: "",
 };
 
+// ── Moved OUTSIDE component — fixes keyboard dismiss on every keystroke ──
+
+const Field = ({
+  placeholder,
+  value,
+  onChangeText,
+  multiline = false,
+}: {
+  placeholder: string;
+  value: string;
+  onChangeText: (t: string) => void;
+  multiline?: boolean;
+}) => (
+  <TextInput
+    style={[styles.input, multiline && { height: 80, textAlignVertical: "top" }]}
+    placeholder={placeholder}
+    placeholderTextColor="#aaa"
+    value={value}
+    onChangeText={onChangeText}
+    multiline={multiline}
+  />
+);
+
+const EventForm = ({
+  form,
+  setForm,
+  loading,
+  onSubmit,
+  submitLabel,
+}: {
+  form: FormType;
+  setForm: (f: FormType) => void;
+  loading: boolean;
+  onSubmit: () => void;
+  submitLabel: string;
+}) => (
+  <ScrollView showsVerticalScrollIndicator={false}>
+    <Field placeholder="Name" value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
+    <Field placeholder="Venue" value={form.venue} onChangeText={(t) => setForm({ ...form, venue: t })} />
+    <Field placeholder="Day (e.g. Monday)" value={form.day} onChangeText={(t) => setForm({ ...form, day: t })} />
+    <Field placeholder="Date (e.g. May 15, 2025)" value={form.date} onChangeText={(t) => setForm({ ...form, date: t })} />
+    <Field placeholder="Time (e.g. 10:00 AM)" value={form.time} onChangeText={(t) => setForm({ ...form, time: t })} />
+    <Field placeholder="Description" value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} multiline />
+    <Field placeholder="Club" value={form.club} onChangeText={(t) => setForm({ ...form, club: t })} />
+    <Field placeholder="Registration Link" value={form.registrationLink} onChangeText={(t) => setForm({ ...form, registrationLink: t })} />
+    <Field placeholder="Deadline (e.g. May 10, 2025)" value={form.deadline} onChangeText={(t) => setForm({ ...form, deadline: t })} />
+    <Pressable
+      style={[styles.submitButton, loading && { opacity: 0.6 }]}
+      onPress={onSubmit}
+      disabled={loading}
+    >
+      <Text style={styles.submitText}>{loading ? "SAVING..." : submitLabel}</Text>
+    </Pressable>
+  </ScrollView>
+);
+
+// ─────────────────────────────────────────────────────────────────────
+
 export default function Samyukthaa() {
   const [events, setEvents] = useState<EventType[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [form, setForm] = useState<FormType>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteInput, setDeleteInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ── Live events — NO orderBy to avoid index crash ──
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "events"), (snap) => {
       const data: EventType[] = snap.docs.map((d) => ({
@@ -158,54 +227,6 @@ export default function Samyukthaa() {
     }
   };
 
-  const Field = ({
-    placeholder,
-    value,
-    onChangeText,
-    multiline = false,
-  }: {
-    placeholder: string;
-    value: string;
-    onChangeText: (t: string) => void;
-    multiline?: boolean;
-  }) => (
-    <TextInput
-      style={[styles.input, multiline && { height: 80, textAlignVertical: "top" }]}
-      placeholder={placeholder}
-      placeholderTextColor="#aaa"
-      value={value}
-      onChangeText={onChangeText}
-      multiline={multiline}
-    />
-  );
-
-  const EventForm = ({
-    onSubmit,
-    submitLabel,
-  }: {
-    onSubmit: () => void;
-    submitLabel: string;
-  }) => (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Field placeholder="Name" value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
-      <Field placeholder="Venue" value={form.venue} onChangeText={(t) => setForm({ ...form, venue: t })} />
-      <Field placeholder="Day (e.g. Monday)" value={form.day} onChangeText={(t) => setForm({ ...form, day: t })} />
-      <Field placeholder="Date (e.g. May 15, 2025)" value={form.date} onChangeText={(t) => setForm({ ...form, date: t })} />
-      <Field placeholder="Time (e.g. 10:00 AM)" value={form.time} onChangeText={(t) => setForm({ ...form, time: t })} />
-      <Field placeholder="Description" value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} multiline />
-      <Field placeholder="Club" value={form.club} onChangeText={(t) => setForm({ ...form, club: t })} />
-      <Field placeholder="Registration Link" value={form.registrationLink} onChangeText={(t) => setForm({ ...form, registrationLink: t })} />
-      <Field placeholder="Deadline (e.g. May 10, 2025)" value={form.deadline} onChangeText={(t) => setForm({ ...form, deadline: t })} />
-      <Pressable
-        style={[styles.submitButton, loading && { opacity: 0.6 }]}
-        onPress={onSubmit}
-        disabled={loading}
-      >
-        <Text style={styles.submitText}>{loading ? "SAVING..." : submitLabel}</Text>
-      </Pressable>
-    </ScrollView>
-  );
-
   return (
     <View style={styles.container}>
       <Image
@@ -217,7 +238,6 @@ export default function Samyukthaa() {
       <Text style={styles.header}>LALAPP</Text>
       <Text style={styles.samyuktha}>SAMYUKTHA</Text>
 
-      {/* ── Pre-events row with + and - ── */}
       <View style={styles.sectionHeader}>
         <Pressable
           style={styles.iconButton}
@@ -236,7 +256,6 @@ export default function Samyukthaa() {
         </Pressable>
       </View>
 
-      {/* ── Event List ── */}
       <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 40 }}>
         {events.length === 0 ? (
           <Text style={styles.empty}>No events yet. Tap + to create one.</Text>
@@ -261,7 +280,13 @@ export default function Samyukthaa() {
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.modalBox}>
             <Text style={styles.modalTitle}>Create New Event</Text>
-            <EventForm onSubmit={handleCreate} submitLabel="CREATE" />
+            <EventForm
+              form={form}
+              setForm={setForm}
+              loading={loading}
+              onSubmit={handleCreate}
+              submitLabel="CREATE"
+            />
             <Pressable style={styles.cancelButton} onPress={() => setShowCreate(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
@@ -300,7 +325,13 @@ export default function Samyukthaa() {
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.modalBox}>
             <Text style={styles.modalTitle}>Edit Event</Text>
-            <EventForm onSubmit={handleEdit} submitLabel="SAVE CHANGES" />
+            <EventForm
+              form={form}
+              setForm={setForm}
+              loading={loading}
+              onSubmit={handleEdit}
+              submitLabel="SAVE CHANGES"
+            />
             <Pressable style={styles.cancelButton} onPress={() => setShowEdit(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
