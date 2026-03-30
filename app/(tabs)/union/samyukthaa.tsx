@@ -5,8 +5,6 @@ import {
     deleteDoc,
     doc,
     onSnapshot,
-    orderBy,
-    query,
     serverTimestamp,
     updateDoc,
 } from "firebase/firestore";
@@ -51,25 +49,17 @@ const EMPTY_FORM = {
 
 export default function Samyukthaa() {
   const [events, setEvents] = useState<EventType[]>([]);
-
-  // ── Modal visibility ──
   const [showCreate, setShowCreate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-
-  // ── Form state ──
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteInput, setDeleteInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ── Live events from Firestore ──
+  // ── Live events — NO orderBy to avoid index crash ──
   useEffect(() => {
-    const q = query(
-      collection(db, "events"),
-      orderBy("createdAt", "desc")
-    );
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(collection(db, "events"), (snap) => {
       const data: EventType[] = snap.docs.map((d) => ({
         id: d.id,
         name: d.data().name ?? "",
@@ -87,7 +77,6 @@ export default function Samyukthaa() {
     return () => unsub();
   }, []);
 
-  // ── Create event ──
   const handleCreate = async () => {
     if (!form.name || !form.date) {
       alert("Name and Date are required.");
@@ -110,7 +99,6 @@ export default function Samyukthaa() {
     }
   };
 
-  // ── Delete event ──
   const handleDelete = async () => {
     const match = events.find(
       (e) => e.name.trim().toLowerCase() === deleteInput.trim().toLowerCase()
@@ -133,7 +121,6 @@ export default function Samyukthaa() {
     }
   };
 
-  // ── Open edit modal ──
   const openEdit = (event: EventType) => {
     setForm({
       name: event.name,
@@ -150,7 +137,6 @@ export default function Samyukthaa() {
     setShowEdit(true);
   };
 
-  // ── Save edit ──
   const handleEdit = async () => {
     if (!editingId) return;
     if (!form.name || !form.date) {
@@ -201,67 +187,27 @@ export default function Samyukthaa() {
     submitLabel: string;
   }) => (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <Field
-        placeholder="Name"
-        value={form.name}
-        onChangeText={(t) => setForm({ ...form, name: t })}
-      />
-      <Field
-        placeholder="Venue"
-        value={form.venue}
-        onChangeText={(t) => setForm({ ...form, venue: t })}
-      />
-      <Field
-        placeholder="Day (e.g. Monday)"
-        value={form.day}
-        onChangeText={(t) => setForm({ ...form, day: t })}
-      />
-      <Field
-        placeholder="Date (e.g. May 15, 2025)"
-        value={form.date}
-        onChangeText={(t) => setForm({ ...form, date: t })}
-      />
-      <Field
-        placeholder="Time (e.g. 10:00 AM)"
-        value={form.time}
-        onChangeText={(t) => setForm({ ...form, time: t })}
-      />
-      <Field
-        placeholder="Description"
-        value={form.description}
-        onChangeText={(t) => setForm({ ...form, description: t })}
-        multiline
-      />
-      <Field
-        placeholder="Club"
-        value={form.club}
-        onChangeText={(t) => setForm({ ...form, club: t })}
-      />
-      <Field
-        placeholder="Registration Link"
-        value={form.registrationLink}
-        onChangeText={(t) => setForm({ ...form, registrationLink: t })}
-      />
-      <Field
-        placeholder="Deadline (e.g. May 10, 2025)"
-        value={form.deadline}
-        onChangeText={(t) => setForm({ ...form, deadline: t })}
-      />
+      <Field placeholder="Name" value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
+      <Field placeholder="Venue" value={form.venue} onChangeText={(t) => setForm({ ...form, venue: t })} />
+      <Field placeholder="Day (e.g. Monday)" value={form.day} onChangeText={(t) => setForm({ ...form, day: t })} />
+      <Field placeholder="Date (e.g. May 15, 2025)" value={form.date} onChangeText={(t) => setForm({ ...form, date: t })} />
+      <Field placeholder="Time (e.g. 10:00 AM)" value={form.time} onChangeText={(t) => setForm({ ...form, time: t })} />
+      <Field placeholder="Description" value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} multiline />
+      <Field placeholder="Club" value={form.club} onChangeText={(t) => setForm({ ...form, club: t })} />
+      <Field placeholder="Registration Link" value={form.registrationLink} onChangeText={(t) => setForm({ ...form, registrationLink: t })} />
+      <Field placeholder="Deadline (e.g. May 10, 2025)" value={form.deadline} onChangeText={(t) => setForm({ ...form, deadline: t })} />
       <Pressable
         style={[styles.submitButton, loading && { opacity: 0.6 }]}
         onPress={onSubmit}
         disabled={loading}
       >
-        <Text style={styles.submitText}>
-          {loading ? "SAVING..." : submitLabel}
-        </Text>
+        <Text style={styles.submitText}>{loading ? "SAVING..." : submitLabel}</Text>
       </Pressable>
     </ScrollView>
   );
 
   return (
     <View style={styles.container}>
-      {/* ── Header ── */}
       <Image
         source={require("../../_assets/splash.png")}
         style={styles.logo}
@@ -271,38 +217,27 @@ export default function Samyukthaa() {
       <Text style={styles.header}>LALAPP</Text>
       <Text style={styles.samyuktha}>SAMYUKTHA</Text>
 
-      {/* ── Pre-events row ── */}
+      {/* ── Pre-events row with + and - ── */}
       <View style={styles.sectionHeader}>
-        {/* Minus button */}
         <Pressable
           style={styles.iconButton}
-          onPress={() => {
-            setDeleteInput("");
-            setShowDelete(true);
-          }}
+          onPress={() => { setDeleteInput(""); setShowDelete(true); }}
         >
           <Text style={styles.iconButtonText}>−</Text>
         </Pressable>
 
         <Text style={styles.sectionTitle}>Pre-events</Text>
 
-        {/* Plus button */}
         <Pressable
           style={styles.iconButton}
-          onPress={() => {
-            setForm({ ...EMPTY_FORM });
-            setShowCreate(true);
-          }}
+          onPress={() => { setForm({ ...EMPTY_FORM }); setShowCreate(true); }}
         >
           <Text style={styles.iconButtonText}>+</Text>
         </Pressable>
       </View>
 
       {/* ── Event List ── */}
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
+      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 40 }}>
         {events.length === 0 ? (
           <Text style={styles.empty}>No events yet. Tap + to create one.</Text>
         ) : (
@@ -312,10 +247,7 @@ export default function Samyukthaa() {
                 <Text style={styles.cardName}>{event.name}</Text>
                 <Text style={styles.cardDate}>{event.date}</Text>
               </View>
-              <Pressable
-                style={styles.editButton}
-                onPress={() => openEdit(event)}
-              >
+              <Pressable style={styles.editButton} onPress={() => openEdit(event)}>
                 <Text style={styles.editIcon}>✏️</Text>
                 <Text style={styles.editLabel}>Edit</Text>
               </Pressable>
@@ -330,10 +262,7 @@ export default function Samyukthaa() {
           <SafeAreaView style={styles.modalBox}>
             <Text style={styles.modalTitle}>Create New Event</Text>
             <EventForm onSubmit={handleCreate} submitLabel="CREATE" />
-            <Pressable
-              style={styles.cancelButton}
-              onPress={() => setShowCreate(false)}
-            >
+            <Pressable style={styles.cancelButton} onPress={() => setShowCreate(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </SafeAreaView>
@@ -357,14 +286,9 @@ export default function Samyukthaa() {
               onPress={handleDelete}
               disabled={loading}
             >
-              <Text style={styles.submitText}>
-                {loading ? "DELETING..." : "Delete"}
-              </Text>
+              <Text style={styles.submitText}>{loading ? "DELETING..." : "Delete"}</Text>
             </Pressable>
-            <Pressable
-              style={styles.cancelButton}
-              onPress={() => setShowDelete(false)}
-            >
+            <Pressable style={styles.cancelButton} onPress={() => setShowDelete(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </View>
@@ -377,10 +301,7 @@ export default function Samyukthaa() {
           <SafeAreaView style={styles.modalBox}>
             <Text style={styles.modalTitle}>Edit Event</Text>
             <EventForm onSubmit={handleEdit} submitLabel="SAVE CHANGES" />
-            <Pressable
-              style={styles.cancelButton}
-              onPress={() => setShowEdit(false)}
-            >
+            <Pressable style={styles.cancelButton} onPress={() => setShowEdit(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </SafeAreaView>
@@ -400,14 +321,7 @@ const styles = StyleSheet.create({
   logo: { width: 100, height: 100, marginBottom: 6 },
   subText: { fontSize: 12, color: "#555", marginBottom: 2 },
   header: { fontSize: 22, fontWeight: "700", marginBottom: 2 },
-  samyuktha: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 16,
-    letterSpacing: 1,
-  },
-
-  // ── Section Header ──
+  samyuktha: { fontSize: 28, fontWeight: "800", marginBottom: 16, letterSpacing: 1 },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -426,15 +340,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   iconButtonText: { fontSize: 24, fontWeight: "700", color: "#c43c4a", lineHeight: 28 },
-
-  // ── Event List ──
   list: { width: "100%" },
-  empty: {
-    textAlign: "center",
-    color: "#999",
-    marginTop: 40,
-    fontSize: 14,
-  },
+  empty: { textAlign: "center", color: "#999", marginTop: 40, fontSize: 14 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -453,8 +360,6 @@ const styles = StyleSheet.create({
   editButton: { alignItems: "center", paddingLeft: 12 },
   editIcon: { fontSize: 18 },
   editLabel: { fontSize: 11, color: "#c43c4a", fontWeight: "700" },
-
-  // ── Modals ──
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
@@ -476,14 +381,7 @@ const styles = StyleSheet.create({
     padding: 24,
     elevation: 10,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-
-  // ── Form ──
+  modalTitle: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 20 },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
