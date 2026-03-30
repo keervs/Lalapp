@@ -44,14 +44,14 @@ export default function Home() {
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("../university/assocs")}
+          onPress={() => router.push("./assocs")}
         >
           <Text style={styles.cardText}>ASSOCIATIONS</Text>
         </Pressable>
 
         <Pressable
           style={styles.card}
-          onPress={() => router.push("../university/c2c")}
+          onPress={() => router.push("./c2c2")}
         >
           <Text style={styles.cardText}>
             CONTRIBUTION TO COUPON
