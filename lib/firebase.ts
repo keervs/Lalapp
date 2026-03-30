@@ -1,6 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+
 
 // 🔐 Firebase configuration
 // Get these values from:
@@ -15,8 +16,8 @@ const firebaseConfig = {
 };
 
 // 🚀 Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// ← This is the fix: only initialize if no app exists yet
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// 🔑 Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
